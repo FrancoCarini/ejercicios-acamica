@@ -78,7 +78,7 @@
           this.state = {
             list: employees,
             employeeName: '',
-            isMonthEmployee: false
+            monthEmployee: ''
           }
         }
         handleAddEmployeeSubmit = event => {
@@ -103,6 +103,9 @@
             list.splice(listIndex,1)
             this.setState({ list })
         }
+        selectMonthEmployee = employeeName => {
+            this.setState({ monthEmployee: employeeName })
+        }
         render() {
           return (
             <div className='container'>
@@ -119,7 +122,7 @@
                 </button>
               </form>
               {this.state.list.map(employee => (
-                <EmployeeCard employeeData={employee} key={employee.id} handleDeleteEmployee={this.handleDeleteEmployee} />
+                <EmployeeCard employeeData={employee} key={employee.id} isMonthEmployee={this.state.monthEmployee === employee.name} selectMonthEmployee={this.selectMonthEmployee} handleDeleteEmployee={this.handleDeleteEmployee} />
               ))}
             </div>
           )
@@ -127,9 +130,10 @@
       }
       const EmployeeCard = props => {
         const handleDeleteEmployee = () => props.handleDeleteEmployee(props.employeeData.id)  
-        const selectMonthEmployee = () => props.selectMonthEmployee(props.employeeData.id)  
+        const selectMonthEmployee = () => props.selectMonthEmployee(props.employeeData.name)  
+        
         return (
-          <div className='employee-card'>
+          <div className={"employee-card " + (props.isMonthEmployee ? 'has-background-grey-light' : null)}>
             <figure className='image is-64x64'>
               <img className='is-rounded' src={props.employeeData.avatar} />
             </figure>
@@ -149,12 +153,18 @@
               </span>
               <span onClick={handleDeleteEmployee}>Eliminar</span>
             </button>
-            <button className='button is-info'>
-              <span className='icon is-small'>
-                <i className='fas fa-award' />
-              </span>
-              <span onClick={selectMonthEmployee}>Empleado Del Mes</span>
-            </button>
+            {
+                !props.isMonthEmployee 
+                ? (
+                    <button className='button is-info'>
+                        <span className='icon is-small'>
+                        <i className='fas fa-award' />
+                        </span>
+                        <span onClick={selectMonthEmployee}>Empleado Del Mes</span>
+                    </button>
+                )
+                : null
+            }
           </div>
         )
       }
