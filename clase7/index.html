@@ -133,7 +133,7 @@
         const selectMonthEmployee = () => props.selectMonthEmployee(props.employeeData.name)  
         
         return (
-          <div className={"employee-card " + (props.isMonthEmployee ? 'has-background-grey-light' : null)}>
+          <div className={"employee-card" + (props.isMonthEmployee ? ' has-background-grey-light' : '')}>
             <figure className='image is-64x64'>
               <img className='is-rounded' src={props.employeeData.avatar} />
             </figure>
