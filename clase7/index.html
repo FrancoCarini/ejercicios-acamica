@@ -155,16 +155,13 @@
                 <span onClick={handleDeleteEmployee}>Eliminar</span>
                 </button>
                 {
-                    !props.isMonthEmployee 
-                    ? (
-                        <button className='button is-info'>
-                            <span className='icon is-small'>
-                            <i className='fas fa-award' />
-                            </span>
-                            <span onClick={selectMonthEmployee}>Empleado Del Mes</span>
-                        </button>
-                    )
-                    : null
+                    !props.isMonthEmployee &&
+                    <button className='button is-info'>
+                      <span className='icon is-small'>
+                          <i className='fas fa-award' />
+                      </span>
+                      <span onClick={selectMonthEmployee}>Empleado Del Mes</span>
+                    </button>
                 }
             </div>
           </div>
