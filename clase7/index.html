@@ -24,15 +24,27 @@
       body {
         background-color: var(--grey-2);
       }
+      .container {
+        min-height: 100vh;
+      }
       .employee-card {
         background-color: white;
         border-radius: 5px;
-        padding: 15px;
+        padding: 12px;
         margin: 10px 0;
         display: grid;
         grid-gap: 15px;
-        grid-template-columns: min-content 340px max-content max-content;
+        grid-template-columns: min-content 340px repeat(3, max-content);
         align-items: center;
+      }
+      .bg-yellow {
+        background-color: var(--yellow);
+      }
+      .form-add-employee {
+        margin: 10px 0;
+        display: grid;
+        grid-gap: 15px;
+        grid-template-columns: 1fr auto;
       }
     </style>
   </head>
@@ -48,23 +60,22 @@
     <script type="text/babel">
       // 3) Ejemplo de Lista de Empleados
       // La lista de empleados será un array de objetos con nombre, sector, avatar y id.
-      //    a. Poder elegir Empleado del Mes y mostrarlo de manera diferente
+      //    a. Poder elegir Empleado del Mes y mostrarlo de manera diferente ( LISTO )
       //        a.1 Crear un nuevo botón en EmployeeCard que sea diga "Empleado del mes"
       //        a.2 Al hacer click ( investigar evento de React onClick ) ejecutar un método "selectMonthEmployee"
-      //        a.3 El método obtendrá el nombre de empleado y lo almacenará en el estado en una key monthEmployee
+      //        a.3 El método obtendrá el id de empleado y lo almacenará en el estado en una key idMonthEmployee
       //        a.4 Enviar una prop nueva a EmployeeCard llamada isMonthEmployee
-      //        a.5 El valor de esta prop será igual a el nombre de empleado que estemos iterendo === monthEmployee ( del estado )
+      //        a.5 El valor de esta prop será igual a el id de empleado que estemos iterando === monthEmployee ( del estado )
       //        a.6 Editar el componente EmployeeCard para que reciba esta prop y de alguna manera por estilos se muestre distinto
       //    b. Poder agregar un nuevo empleado ( LISTO )
       //    c. Poder editar un empleado existente ( Se ve la próxima clase)
-      //    d. Poder eliminar un empleado existente
-      //        d.1 Al hacer click ( investigar evento de React onClick ) en el botón "Eliminar" ejecutar un método
+      //    d. Poder eliminar un empleado existente ( LISTO )
+      //        d.1 Al hacer click ( investigar evento de React onClick ) en el botón "Eliminar" ejecutar un método handleRemoveEmployee
       //        d.2 El método obtendrá el id de empleado y lo buscará en el array "list" del estado
-      //        d.3 Buscar en que īndice se encuentra el empleado con ese id en particular "findIndex"
-      //        d.4 Usando el método slice() ( Investigar ) obtener un array nuevo con todos los mismos elementos pero sin el indice hallado
+      //        d.4 Usando el método filter() ( Investigar ) obtener un array nuevo con todos los mismos elementos pero sin el empleado hallado
       //        d.5 A este nuevo array almacenarlo en el estado en la propiedad "list"
-      //    e. Poder filtrar por departamento ( Se ve la próxima clase)
-      //    f. Poder filtrar por nombre ( Se ve la próxima clase)
+      //    e. Poder filtrar por departamento (LISTO)
+      //    f. Poder filtrar por nombre
       // Diseño de Idea: https://dribbble.com/shots/6131920-Employee-page
       class App extends React.Component {
         constructor() {
@@ -75,10 +86,16 @@
             avatar: faker.image.avatar(),
             id: faker.random.uuid(),
           }))
+          const sectors = employees.map(({ sector }) => sector)
+          const sectorsUnrepeated = new Set(sectors)
+          const sectorsArray = [...sectorsUnrepeated]
           this.state = {
             list: employees,
+            listBackup: employees,
             employeeName: '',
-            monthEmployee: ''
+            idMonthEmployee: '',
+            sectors: sectorsArray,
+            dropdownActive: false,
           }
         }
         handleAddEmployeeSubmit = event => {
@@ -97,73 +114,127 @@
           const { value } = event.target
           this.setState({ employeeName: value })
         }
-        handleDeleteEmployee = id => {
-            const { list } = this.state
-            let listIndex = list.findIndex( employee => employee.id === id)
-            list.splice(listIndex,1)
-            this.setState({ list })
+        handleMonthEmployee = id => {
+          this.setState({ idMonthEmployee: id })
         }
-        selectMonthEmployee = employeeName => {
-            this.setState({ monthEmployee: employeeName })
+        handleRemoveEmployee = id => {
+          const { list, listBackup } = this.state
+          const listWithoutEmployee = list.filter(employee => employee.id !== id)
+          const listBackupWithoutEmployee = listBackup.filter(employee => employee.id !== id)
+          this.setState({ list: listWithoutEmployee, listBackup: listBackupWithoutEmployee })
+        }
+        handleDropdownActive = () => this.setState(prevState => ({ dropdownActive: !prevState.dropdownActive }))
+        handleSelectSector = sector => {
+          const { listBackup } = this.state
+          const listFilteredBySector = listBackup.filter(employee => employee.sector === sector)
+          this.setState({ list: listFilteredBySector })
+        }
+        handleRemoveFilter = () => {
+          const { list, listBackup } = this.state
+          this.setState({list: listBackup})
+        }
+        handleFilterByName = event => {
+          event.preventDefault()
+          const {listBackup} = this.state
+          const value = event.target.value.trim()
+          const listFilteredByName = listBackup.filter(employee => employee.name.includes(value))
+          this.setState({list: listFilteredByName})
         }
         render() {
+          const { newEmployee, list, idMonthEmployee, dropdownActive, sectors } = this.state
           return (
             <div className='container'>
               <h1 className='is-size-1'>Lista de Empleados</h1>
-              <form onSubmit={this.handleAddEmployeeSubmit}>
-                <input
-                  className='input'
-                  type='text'
-                  value={this.state.newEmployee}
-                  onChange={this.handleAddEmployeeChange}
-                />
+              <form onSubmit={this.handleAddEmployeeSubmit} className='form-add-employee'>
+                <input className='input' type='text' value={newEmployee} onChange={this.handleAddEmployeeChange} />
                 <button className='button is-success' type='submit'>
                   Agregar Empleado
                 </button>
               </form>
-              {this.state.list.map(employee => (
-                <EmployeeCard employeeData={employee} key={employee.id} isMonthEmployee={this.state.monthEmployee === employee.name} selectMonthEmployee={this.selectMonthEmployee} handleDeleteEmployee={this.handleDeleteEmployee} />
+              <h1 className='is-size-3'>Filtrar por nombre</h1>
+              <input className='input' type='text' onChange={this.handleFilterByName} />
+              <Dropdown
+                sectors={sectors}
+                dropdownActive={dropdownActive}
+                onSelectSector={this.handleSelectSector}
+                onDropdownActive={this.handleDropdownActive}
+                onRemoveFilter={this.handleRemoveFilter}
+              />
+              {list.map(employee => (
+                <EmployeeCard
+                  key={employee.id}
+                  employeeData={employee}
+                  idMonthEmployee={idMonthEmployee}
+                  onRemoveEmployee={this.handleRemoveEmployee}
+                  onSelectMonthEmployee={this.handleMonthEmployee}
+                />
               ))}
             </div>
           )
         }
       }
-      const EmployeeCard = props => {
-        const handleDeleteEmployee = () => props.handleDeleteEmployee(props.employeeData.id)  
-        const selectMonthEmployee = () => props.selectMonthEmployee(props.employeeData.name)  
-        
+      const Dropdown = props => {
+        const { dropdownActive, sectors, onDropdownActive, onSelectSector, onRemoveFilter } = props
         return (
-          <div className={"employee-card" + (props.isMonthEmployee ? ' has-background-grey-light' : '')}>
+          <div className={`dropdown ${dropdownActive === true ? 'is-active' : ''}`}>
+            <div className='dropdown-trigger'>
+              <button className='button' aria-haspopup='true' aria-controls='dropdown-menu' onClick={onDropdownActive}>
+                <span>Elegir sector</span>
+                <span className='icon is-small'>
+                  <i className='fas fa-angle-down' aria-hidden='true' />
+                </span>
+              </button>
+            </div>
+            <div className='dropdown-menu' id='dropdown-menu' role='menu'>
+              <div className='dropdown-content'>
+                {sectors.map(sector => (
+                  <a key={sector} href='#' className='dropdown-item' onClick={() => onSelectSector(sector)}>
+                    {sector}
+                  </a>
+                ))}
+              </div>
+            </div>
+            <button className='button is-danger is-outlined' onClick={onRemoveFilter}>
+              <span className='icon is-small'>
+                <i className='fas fa-times' />
+              </span>
+              <span>Quitar Filtro</span>
+            </button>
+          </div>
+        )
+      }
+      const EmployeeCard = props => {
+        const { employeeData, idMonthEmployee, onSelectMonthEmployee, onRemoveEmployee } = props
+        const isMonthEmployee = idMonthEmployee === employeeData.id
+        return (
+          <div className={`employee-card ${isMonthEmployee ? 'bg-yellow' : ''}`}>
             <figure className='image is-64x64'>
-              <img className='is-rounded' src={props.employeeData.avatar} />
+              <img className='is-rounded' src={employeeData.avatar} />
             </figure>
             <div>
-              <h2 className='is-size-3'>{props.employeeData.name}</h2>
-              <h3 className='is-family-monospace'>{props.employeeData.sector}</h3>
+              <h2 className='is-size-3'>{employeeData.name}</h2>
+              <h3 className='is-family-monospace'>{employeeData.sector}</h3>
             </div>
-            <div className='buttons'>
-                <button className='button is-primary'>
+            <button className='button is-primary'>
+              <span className='icon is-small'>
+                <i className='fas fa-edit' />
+              </span>
+              <span>Editar</span>
+            </button>
+            <button className='button is-danger is-outlined' onClick={() => onRemoveEmployee(employeeData.id)}>
+              <span className='icon is-small'>
+                <i className='fas fa-times' />
+              </span>
+              <span>Eliminar</span>
+            </button>
+            {!isMonthEmployee && (
+              <button className='button is-info' onClick={() => onSelectMonthEmployee(employeeData.id)}>
                 <span className='icon is-small'>
-                    <i className='fas fa-edit' />
+                  <i className='fas fa-award' />
                 </span>
-                <span>Editar</span>
-                </button>
-                <button className='button is-danger is-outlined'>
-                <span className='icon is-small'>
-                    <i className='fas fa-times' />
-                </span>
-                <span onClick={handleDeleteEmployee}>Eliminar</span>
-                </button>
-                {
-                    !props.isMonthEmployee &&
-                    <button className='button is-info'>
-                      <span className='icon is-small'>
-                          <i className='fas fa-award' />
-                      </span>
-                      <span onClick={selectMonthEmployee}>Empleado Del Mes</span>
-                    </button>
-                }
-            </div>
+                <span>Empleado del mes</span>
+              </button>
+            )}
           </div>
         )
       }
